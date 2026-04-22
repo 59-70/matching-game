@@ -9,7 +9,7 @@ Oyuncuların hız, algı ve odaklanma sınırlarını test eden; minimalist ve m
    **Sayılar:** Hızlı matematiksel karar verme ve sayı tanıma.
    **Şekiller:** Geometrik karmaşa içinde doğruyu bulma.
 * **Dinamik Oyun Motoru:** İlerledikçe büyüyen ızgara sistemi (2x2, 3x3, 4x4) ve oyuncuyu şaşırtan "Tersine Mantık" (Reverse) bölümleri.
-* **İlerleme ve Kayıt Sistemi:** Tarayıcının `Local Storage` özelliği kullanılarak oyuncunun geçtiği bölümler ve kazandığı yıldızlar (1-3 ⭐) tarayıcıda kalıcı olarak saklanır.
+* **İlerleme ve Kayıt Sistemi:** Tarayıcının `Local Storage` özelliği kullanılarak oyuncunun geçtiği bölümler ve kazandığı yıldızlar tarayıcıda kalıcı olarak saklanır.
 * **Modern Kullanıcı Arayüzü (UI):** CSS ile hazırlanmış cam efekti (Glassmorphism), neon vurgular, akıcı animasyonlar ve cihaz boyutuna duyarlı (responsive) tasarım.
 * **Süre ve Hedef Yönetimi:** Ana menüden ayarlanabilen dinamik süre ve saniye/skor oranına dayalı yıldız sistemi.
 
