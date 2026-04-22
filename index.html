@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refleks Ustası - Saga Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS TASARIM KISMI --- */
+        :root {
+            --bg-dark: #0f0c29; --bg-mid: #302b63; --bg-light: #24243e;
+            --accent-neon: #00f2fe; --accent-pink: #fe0979;
+            --success-green: #00eaff; --error-red: #ff0844;
+            --gold-star: #ffd700; --locked-grey: #555;
+            --text-white: #ffffff;
+        }
+        
+        body {
+            margin: 0; padding: 0; 
+            background: linear-gradient(135deg, var(--bg-dark), var(--bg-mid), var(--bg-light));
+            background-size: 400% 400%; animation: gradientBG 15s ease infinite;
+            color: var(--text-white); font-family: 'Poppins', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden; user-select: none;
+        }
+
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .container {
+            width: 100%; max-width: 450px; height: 90vh; max-height: 800px;
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px 20px;
+            border-radius: 25px; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; position: relative;
+        }
+        
+        h1, h2 {
+            font-family: 'Orbitron', sans-serif; text-align: center; margin-top: 0;
+            background: linear-gradient(to right, var(--accent-neon), #4facfe);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .screen { display: none; flex-direction: column; height: 100%; }
+        .active { display: flex; animation: zoomIn 0.3s ease; }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        /* GİRİŞ BİLGİSİ VE SÜRE AYARI */
+        .settings-panel {
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px; border-radius: 15px; margin: 15px 0; text-align: center;
+        }
+        .settings-panel input {
+            background: rgba(0,0,0,0.5); color: var(--accent-neon); border: 1px solid rgba(255,255,255,0.2);
+            padding: 5px 10px; border-radius: 8px; font-size: 1.1em; width: 60px; text-align: center; font-weight: bold; font-family: 'Orbitron'; outline: none; margin: 0 10px;
+        }
+        
+        /* ANA MENÜ KARTLARI */
+        .main-menu-grid { display: flex; flex-direction: column; gap: 15px; flex-grow: 1; overflow-y: auto; }
+        .category-card {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; border-radius: 20px; cursor: pointer; transition: 0.3s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .category-card:hover { transform: translateY(-5px); border-color: var(--accent-neon); box-shadow: 0 10px 20px rgba(0,242,254,0.2); }
+        .category-title { font-size: 1.5em; font-weight: bold; font-family: 'Orbitron'; }
+        .progress-text { color: var(--gold-star); font-weight: bold; font-size: 1.1em; }
+
+        /* BÖLÜM (LEVEL) HARİTASI */
+        .level-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
+            overflow-y: auto; padding: 10px; margin-top: 10px;
+        }
+        .level-node {
+            background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%; aspect-ratio: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; cursor: pointer; transition: 0.3s;
+            font-size: 1.5em; font-weight: bold; position: relative;
+        }
+        .level-node.unlocked { border-color: var(--success-green); box-shadow: 0 0 15px rgba(0, 234, 255, 0.3); }
+        .level-node.locked { background: rgba(0,0,0,0.2); color: var(--locked-grey); cursor: not-allowed; border-color: #333; }
+        .level-node.unlocked:active { transform: scale(0.9); }
+        .stars-display { font-size: 0.5em; color: var(--gold-star); margin-top: 5px; letter-spacing: 2px; }
+
+        /* OYUN ALANI VE DURAKLATMA */
+        .game-header { display: flex; justify-content: space-between; align-items: center; font-family: 'Orbitron'; font-size: 1.1em; margin-bottom: 10px; }
+        .rule-banner { background: var(--error-red); color: white; text-align: center; font-weight: bold; padding: 5px; border-radius: 10px; margin-bottom: 10px; display: none; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .btn-pause {
+            background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px; cursor: pointer; padding: 2px 10px; font-size: 1.1em; margin-left: 10px; transition: 0.2s;
+        }
+        .btn-pause:hover { background: rgba(255,255,255,0.3); }
+
+        .pause-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 100; border-radius: 25px; backdrop-filter: blur(8px);
+            display: none; justify-content: center; align-items: center;
+        }
+        .pause-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+        .pause-box {
+            background: rgba(255,255,255,0.05); padding: 30px 20px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1); width: 80%; text-align: center;
+            display: flex; flex-direction: column; gap: 12px; box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+        }
+
+        /* YENİ: SABİT HEDEF PANELİ (Artık ızgaranın içinde değil) */
+        .target-container { display: flex; justify-content: center; align-items: center; margin-bottom: 15px; }
+        #target-frame {
+            width: 80px; height: 80px; border: 4px solid white; border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; background: var(--bg-dark); box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            font-size: 2.5em; color: white; text-align: center;
+        }
+
+        .game-grid { display: grid; gap: 10px; width: 100%; aspect-ratio: 1; margin: 0 auto; position: relative; }
+        .tile { 
+            border-radius: 15px; cursor: pointer; display: flex; justify-content: center; align-items: center;
+            font-weight: bold; background: rgba(0,0,0,0.6); color: white; border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.1s; text-align: center;
+        }
+        .tile:active { transform: scale(0.9); filter: brightness(1.5); }
+        
+        /* BUTONLAR VE EFEKTLER */
+        .btn-back { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 10px; font-family: 'Orbitron'; cursor: pointer; align-self: flex-start; margin-bottom: 10px; transition: 0.2s;}
+        .btn-back:hover { background: rgba(255,255,255,0.1); }
+        .btn-primary { background: linear-gradient(45deg, var(--accent-pink), #ff0844); color: white; border: none; padding: 15px; border-radius: 15px; font-family: 'Orbitron'; font-size: 1.1em; cursor: pointer; width: 100%; transition: 0.2s; box-shadow: 0 10px 20px rgba(254, 9, 121, 0.4); }
+        .btn-primary:hover { transform: scale(1.05); }
+        
+        .control-row { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; }
+        .btn-nav { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 15px 5px; border-radius: 12px; cursor: pointer; flex: 1; font-weight: bold; font-family: 'Orbitron'; transition: 0.2s; font-size: 0.9em; }
+        .btn-nav:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        .btn-nav.accent { background: linear-gradient(45deg, var(--accent-neon), #4facfe); border: none; box-shadow: 0 5px 15px rgba(0,242,254,0.3); color: #000; }
+        .btn-nav:disabled { display: none; }
+        
+        .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-8px, 0, 0); } 40%, 60% { transform: translate3d(8px, 0, 0); } }
+    </style>
+</head>
+<body>
+    <div class="container" id="main-container">
+        
+        <div id="pause-modal" class="pause-overlay">
+            <div class="pause-box">
+                <h2 style="font-size: 1.6em; color: var(--accent-neon); margin-bottom: 5px;">DURAKLATILDI</h2>
+                <button class="btn-primary" onclick="resumeGame()">▶ Devam Et</button>
+                <button class="btn-nav" style="width: 100%; margin: 0;" onclick="restartGame()">↻ Yeniden Başla</button>
+                <button class="btn-back" style="width: 100%; text-align: center; margin: 0;" onclick="quitGame()">🚪 Haritaya Dön</button>
+            </div>
+        </div>
+
+        <div id="screen-menu" class="screen active">
+            <h1 style="font-size: 2.8em; margin-bottom: 0;">REFLEKS<br>SAGA</h1>
+            
+            <div class="settings-panel">
+                <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 5px;">Kural: Saniye başına 1 doğru!</div>
+                Süre: <input type="number" id="global-duration" value="20" min="10" max="60"> Saniye
+            </div>
+            
+            <div class="main-menu-grid">
+                <div class="category-card" onclick="openLevels('colors')">
+                    <div><div class="category-title" style="color: #FF0055;">🎨 Renkler</div><div style="font-size: 0.9em; color:#ccc;">Renk algını test et</div></div>
+                    <div class="progress-text" id="prog-colors">0/18 ⭐</div>
+                </div>
+                <div class="category-card" onclick="openLevels('numbers')">
+                    <div><div class="category-title" style="color: #00F2FE;">🔢 Sayılar</div><div style="font-size: 0.9em; color:#ccc;">Matematik ve Hız</div></div>
+                    <div class="progress-text" id="prog-numbers">0/18 ⭐</div>
+                </div>
+                <div class="category-card" onclick="openLevels('shapes')">
+                    <div><div class="category-title" style="color: #00FF87;">🔺 Şekiller</div><div style="font-size: 0.9em; color:#ccc;">Geometri Karmaşası</div></div>
+                    <div class="progress-text" id="prog-shapes">0/18 ⭐</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-levels" class="screen">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn-back" onclick="showScreen('screen-menu')">◀ Geri</button>
+                <div id="target-info" style="color: var(--accent-neon); font-family: 'Orbitron'; font-size: 0.9em; text-align: right;">Hedef: -- Puan</div>
+            </div>
+            <h2 id="level-title">KATEGORİ</h2>
+            
+            <div class="level-grid" id="level-grid">
+                </div>
+        </div>
+
+        <div id="screen-game" class="screen">
+            <div class="game-header">
+                <span>LVL: <span id="ui-lvl">1</span></span>
+                <span id="ui-score" style="color: var(--success-green);">SKOR: 0/--</span>
+                <div style="display: flex; align-items: center;">
+                    <span id="ui-time" style="color: var(--error-red);">SÜRE: --</span>
+                    <button class="btn-pause" onclick="pauseGame()">⏸</button>
+                </div>
+            </div>
+            
+            <div id="rule-banner" class="rule-banner">BUNU SEÇME!</div>
+            
+            <div class="target-container">
+                <div id="target-frame"></div>
+            </div>
+
+            <div class="game-grid" id="game-board">
+                </div>
+        </div>
+
+        <div id="screen-result" class="screen" style="justify-content: center; align-items: center; text-align: center;">
+            <h1 id="result-title" style="font-size: 2.2em; margin-bottom: 5px;">BÖLÜM BİTTİ</h1>
+            <div id="result-stars" style="font-size: 3.5em; margin: 5px 0; text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);">⭐⭐⭐</div>
+            <p id="result-desc" style="font-size: 1.3em; margin-bottom: 5px; font-weight: bold;">Skor: 15 / Hedef: 20</p>
+            <p id="result-message" style="color: #aaa; margin-bottom: 25px; font-size: 0.9em;">Saniye başına en az 1 doğru yapmalısın.</p>
+            
+            <div class="control-row">
+                <button class="btn-nav" id="btn-prev" onclick="startGame(currentLevelIndex - 1)">◀ Önceki</button>
+                <button class="btn-nav" onclick="startGame(currentLevelIndex)">↻ Tekrar</button>
+                <button class="btn-nav accent" id="btn-next" onclick="startGame(currentLevelIndex + 1)">Sonraki ▶</button>
+            </div>
+            
+            <button class="btn-back" style="width: 100%; text-align: center; margin-bottom: 0;" onclick="openLevels(currentCategory)">🚪 Haritaya Dön</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- VERİTABANI: GENİŞLETİLMİŞ RENK VE ŞEKİL HAVUZU (16+ Adet) --- */
+        const levelDesigns = [
+            { id: 1, grid: 2, mod: 'normal' },
+            { id: 2, grid: 2, mod: 'normal' },
+            { id: 3, grid: 3, mod: 'normal' },
+            { id: 4, grid: 3, mod: 'reverse' }, 
+            { id: 5, grid: 4, mod: 'normal' },
+            { id: 6, grid: 4, mod: 'reverse' }
+        ];
+
+        // 16 Kutu için 16 Benzersiz Renk
+        const colors = [
+            '#FF0055', '#00F2FE', '#00FF87', '#FFD700', '#B026FF', '#FF8C00', 
+            '#FF00E4', '#00FFF0', '#B2FF05', '#FF3300', '#7A00FF', '#0066FF', 
+            '#FFB800', '#00FF33', '#FF007F', '#00E4FF'
+        ];
+        
+        // 16 Kutu için 16 Benzersiz Şekil
+        const shapes = [
+            '▲', '■', '●', '★', '◆', '⬟', '✖', '✚', 
+            '✿', '❖', '🌙', '💧', '⚡', '☂', '♠', '♣'
+        ];
+
+        /* --- OYUN MOTORU VE KAYIT SİSTEMİ --- */
+        let currentCategory = ''; let currentLevelIndex = 0;
+        let score = 0, timeLeft = 0, targetScore = 0, timer = null, currentTarget = "", currentModifier = "";
+        
+        let saveFile = JSON.parse(localStorage.getItem('RefleksSagaSaveV2')) || {
+            colors: { unlocked: 1, stars: {} },
+            numbers: { unlocked: 1, stars: {} },
+            shapes: { unlocked: 1, stars: {} }
+        };
+
+        function saveProgress() {
+            localStorage.setItem('RefleksSagaSaveV2', JSON.stringify(saveFile));
+            updateMenuProgress();
+        }
+
+        function updateMenuProgress() {
+            ['colors', 'numbers', 'shapes'].forEach(cat => {
+                let totalStars = 0;
+                for(let key in saveFile[cat].stars) totalStars += saveFile[cat].stars[key];
+                document.getElementById(`prog-${cat}`).innerText = `${totalStars}/18 ⭐`;
+            });
+        }
+        updateMenuProgress();
+
+        /* --- EKRAN YÖNETİMİ --- */
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function openLevels(category) {
+            currentCategory = category;
+            let titles = { 'colors': 'RENK BÖLÜMLERİ', 'numbers': 'SAYI BÖLÜMLERİ', 'shapes': 'ŞEKİL BÖLÜMLERİ' };
+            document.getElementById('level-title').innerText = titles[category];
+            
+            let userDuration = parseInt(document.getElementById('global-duration').value) || 20;
+            document.getElementById('target-info').innerText = `Hedef: ${userDuration} Puan`;
+            
+            const grid = document.getElementById('level-grid');
+            grid.innerHTML = '';
+
+            let catSave = saveFile[category];
+
+            levelDesigns.forEach((lvl, index) => {
+                let node = document.createElement('div');
+                let isUnlocked = lvl.id <= catSave.unlocked;
+                let earnedStars = catSave.stars[lvl.id] || 0;
+                
+                node.className = `level-node ${isUnlocked ? 'unlocked' : 'locked'}`;
+                let starText = isUnlocked && earnedStars > 0 ? "⭐".repeat(earnedStars) + "🌑".repeat(3-earnedStars) : "";
+                node.innerHTML = `${isUnlocked ? lvl.id : '🔒'} <div class="stars-display">${starText}</div>`;
+
+                if(isUnlocked) node.onclick = () => startGame(index);
+                grid.appendChild(node);
+            });
+
+            showScreen('screen-levels');
+        }
+
+        /* --- DURAKLATMA (PAUSE) FONKSİYONLARI --- */
+        function pauseGame() {
+            clearInterval(timer);
+            document.getElementById('pause-modal').classList.add('active');
+        }
+
+        function resumeGame() {
+            document.getElementById('pause-modal').classList.remove('active');
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('ui-time').innerText = `SÜRE: ${Math.max(0, timeLeft)}`;
+                if (timeLeft <= 0) endGame(levelDesigns[currentLevelIndex]);
+            }, 1000);
+        }
+
+        function restartGame() {
+            document.getElementById('pause-modal').classList.remove('active');
+            startGame(currentLevelIndex);
+        }
+
+        function quitGame() {
+            clearInterval(timer);
+            document.getElementById('pause-modal').classList.remove('active');
+            openLevels(currentCategory);
+        }
+
+        /* --- BÖLÜM BAŞLATMA --- */
+        function startGame(index) {
+            document.getElementById('pause-modal').classList.remove('active');
+            
+            currentLevelIndex = index;
+            let levelData = levelDesigns[index];
+            
+            let userDuration = parseInt(document.getElementById('global-duration').value) || 20;
+            
+            score = 0;
+            timeLeft = userDuration;
+            targetScore = userDuration;
+            currentModifier = levelData.mod;
+            
+            document.getElementById('ui-lvl').innerText = levelData.id;
+            document.getElementById('ui-score').innerText = `SKOR: 0/${targetScore}`;
+            document.getElementById('ui-time').innerText = `SÜRE: ${timeLeft}`;
+            
+            let banner = document.getElementById('rule-banner');
+            if (currentModifier === 'reverse') {
+                banner.style.display = 'block';
+                banner.innerText = currentCategory === 'numbers' ? "MATEMATİK ZAMANI!" : "BUNU SEÇME!";
+            } else {
+                banner.style.display = 'none';
+            }
+
+            buildGrid(levelData.grid);
+            setupRound();
+            showScreen('screen-game');
+            
+            if(timer) clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('ui-time').innerText = `SÜRE: ${Math.max(0, timeLeft)}`;
+                if (timeLeft <= 0) endGame(levelData);
+            }, 1000);
+        }
+
+        /* --- DİNAMİK ARENA OLUŞTURMA --- */
+        function buildGrid(gridSize) {
+            const board = document.getElementById('game-board');
+            board.innerHTML = ''; // Sadece kutuları temizler, hedef dışarıda güvende.
+            board.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            board.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+            let totalTiles = gridSize * gridSize;
+            let fontSize = gridSize === 2 ? '4em' : (gridSize === 3 ? '2.5em' : '1.8em');
+
+            for (let i = 0; i < totalTiles; i++) {
+                let tile = document.createElement('div');
+                tile.className = 'tile'; tile.style.fontSize = fontSize;
+                tile.onclick = () => handleTileClick(tile);
+                board.appendChild(tile);
+            }
+        }
+
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        /* --- TUR MANTIĞI VE DOLDURMA --- */
+        function setupRound() {
+            const tiles = document.querySelectorAll('.tile');
+            const target = document.getElementById('target-frame');
+            let totalTiles = tiles.length;
+
+            if (currentCategory === 'colors') {
+                // Kopya renkleri engellemek için sadece havuzdan 16 rengi alıp dilimliyoruz
+                let pool = shuffle(colors).slice(0, totalTiles);
+                
+                tiles.forEach((t, i) => { t.style.backgroundColor = pool[i]; t.innerText = ""; t.dataset.val = pool[i]; });
+
+                if(currentModifier === 'reverse') {
+                    let wrongTarget = pool[Math.floor(Math.random() * pool.length)];
+                    target.style.backgroundColor = wrongTarget; target.innerText = "❌";
+                    currentTarget = wrongTarget; 
+                } else {
+                    currentTarget = pool[Math.floor(Math.random() * totalTiles)];
+                    target.style.backgroundColor = currentTarget; target.innerText = "";
+                }
+                
+            } else if (currentCategory === 'numbers') {
+                let pool = [];
+                while(pool.length < totalTiles) { let r = Math.floor(Math.random() * 20) + 1; if(!pool.includes(r)) pool.push(r); }
+                
+                if(currentModifier === 'reverse') {
+                    currentTarget = pool[Math.floor(Math.random() * totalTiles)];
+                    let a = Math.floor(Math.random() * (currentTarget - 1)) + 1;
+                    let b = currentTarget - a;
+                    target.style.backgroundColor = "#111"; target.innerText = `${a}+${b}`;
+                } else {
+                    currentTarget = pool[Math.floor(Math.random() * totalTiles)];
+                    target.style.backgroundColor = "#111"; target.innerText = currentTarget;
+                }
+                tiles.forEach((t, i) => { t.style.backgroundColor = "rgba(0,0,0,0.5)"; t.innerText = pool[i]; t.dataset.val = pool[i]; });
+                
+            } else if (currentCategory === 'shapes') {
+                // Şekiller havuzunu kopyaları önlemek için genişlettik ve dilimledik
+                let pool = shuffle(shapes).slice(0, totalTiles);
+                
+                tiles.forEach((t, i) => { t.style.backgroundColor = "rgba(0,0,0,0.5)"; t.innerText = pool[i]; t.dataset.val = pool[i]; });
+
+                if(currentModifier === 'reverse') {
+                    let wrongTarget = pool[Math.floor(Math.random() * totalTiles)];
+                    target.style.backgroundColor = "#111"; target.style.color = "var(--error-red)";
+                    target.innerText = wrongTarget; currentTarget = wrongTarget;
+                } else {
+                    currentTarget = pool[Math.floor(Math.random() * totalTiles)];
+                    target.style.backgroundColor = "#111"; target.style.color = "white"; target.innerText = currentTarget;
+                }
+            }
+        }
+
+        function handleTileClick(tile) {
+            let clickedVal = tile.dataset.val;
+            let isCorrect = false;
+
+            if (currentModifier === 'reverse') isCorrect = currentCategory === 'numbers' ? (clickedVal == currentTarget) : (clickedVal !== currentTarget);
+            else isCorrect = (clickedVal == currentTarget);
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('ui-score').innerText = `SKOR: ${score}/${targetScore}`;
+                setupRound();
+            } else {
+                document.getElementById('main-container').classList.add('shake');
+                document.body.style.backgroundColor = "#2a0810";
+                setTimeout(() => { document.getElementById('main-container').classList.remove('shake'); document.body.style.backgroundColor = ""; }, 300);
+            }
+        }
+
+        /* --- BÖLÜM BİTİŞİ VE BUTON KONTROLLERİ --- */
+        function endGame(levelData) {
+            clearInterval(timer);
+            
+            let stars = 0;
+            if (score >= targetScore) stars = 1;
+            if (score >= Math.ceil(targetScore * 1.2)) stars = 2; 
+            if (score >= Math.ceil(targetScore * 1.5)) stars = 3; 
+            
+            let title = document.getElementById('result-title');
+            let msg = document.getElementById('result-message');
+            let currentCatSave = saveFile[currentCategory];
+            
+            if (stars > 0) {
+                title.innerText = "BÖLÜM GEÇİLDİ!"; title.style.color = "var(--success-green)";
+                document.getElementById('result-stars').innerText = "⭐".repeat(stars) + "🌑".repeat(3-stars);
+                msg.innerText = stars === 3 ? "İnanılmaz bir refleks!" : "Güzel iş, daha da hızlanabilirsin.";
+                msg.style.color = "var(--success-green)";
+                
+                if (!currentCatSave.stars[levelData.id] || currentCatSave.stars[levelData.id] < stars) {
+                    currentCatSave.stars[levelData.id] = stars;
+                }
+                if (currentCatSave.unlocked === levelData.id && levelData.id < levelDesigns.length) {
+                    currentCatSave.unlocked++;
+                }
+                saveProgress();
+            } else {
+                title.innerText = "BAŞARISIZ"; title.style.color = "var(--error-red)";
+                document.getElementById('result-stars').innerText = "🌑🌑🌑";
+                msg.innerText = "Kilit açılmadı. Saniye başına en az 1 doğru yapmalısın.";
+                msg.style.color = "var(--error-red)";
+            }
+            
+            document.getElementById('result-desc').innerText = `Skor: ${score} / Hedef: ${targetScore}`;
+            
+            let btnPrev = document.getElementById('btn-prev');
+            let btnNext = document.getElementById('btn-next');
+            
+            btnPrev.disabled = currentLevelIndex === 0;
+            
+            let hasNextLevel = currentLevelIndex < levelDesigns.length - 1;
+            let isNextUnlocked = currentCatSave.unlocked > levelDesigns[currentLevelIndex].id;
+            
+            if (hasNextLevel && isNextUnlocked) {
+                btnNext.disabled = false;
+            } else {
+                btnNext.disabled = true;
+            }
+            
+            showScreen('screen-result');
+        }
+    </script>
+</body>
+</html>
